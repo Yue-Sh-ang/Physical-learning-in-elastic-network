@@ -82,13 +82,13 @@ function step!(tr::Trainer_CL,T; eta=1.0, alpha=1.0, step_md=1)
     seed = rand(1:10^6)
 
     # forward dynamics
-    step!(tr.net_f,T; steps=step_md, seed=seed)
+    run_md!(tr.net_f,T; steps=step_md, seed=seed)
 
     # clamp
     clamp_eta!(tr; eta=eta)
 
     # constrained dynamics
-    step!(tr.net_c,T; steps=step_md, seed=seed)
+    run_md!(tr.net_c,T; steps=step_md, seed=seed)
 
     # stiffness update
     learn_k!(tr, alpha)
