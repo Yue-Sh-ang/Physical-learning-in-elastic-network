@@ -1,3 +1,5 @@
+module ENM
+
 using LinearAlgebra, Random
 
 function load_graph(filename)
@@ -106,7 +108,7 @@ function reset_config!(enm::ENM)
     enm.pts .= enm.pts0
 end
 
-function step!(enm::ENM,T; steps=1, dt=0.005, seed=nothing, tau=1.0)
+function run_md!(enm::ENM,T; steps=1, dt=0.005, seed=nothing, tau=1.0)
     if seed !== nothing # I think there is a better way to control the thermal noise
         Random.seed!(seed)
     end

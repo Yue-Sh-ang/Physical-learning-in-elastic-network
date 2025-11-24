@@ -1,4 +1,9 @@
-using Random, LinearAlgebra
+module TrainerCL
+
+using Random
+using LinearAlgebra
+using .ENM
+
 
 mutable struct Trainer_CL
     input::Vector{Tuple{Int,Float64,Float64}}   # (edge, input strain, stiffness)
