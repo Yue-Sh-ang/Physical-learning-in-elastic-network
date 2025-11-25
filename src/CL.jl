@@ -1,8 +1,6 @@
-module TrainerCL
 
 using Random
 using LinearAlgebra
-using .ENM
 
 
 mutable struct Trainer_CL
@@ -96,3 +94,4 @@ function step!(tr::Trainer_CL,T; eta=1.0, alpha=1.0, step_md=1)
     # return list of strains on output edges
     return [calc_strain_f(tr, edge) for (edge, _, _) in tr.output]
 end
+

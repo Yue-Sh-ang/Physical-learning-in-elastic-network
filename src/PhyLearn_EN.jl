@@ -1,11 +1,9 @@
 module PhyLearn_EN
 
 include("ENM.jl")
-include("TrainerCL.jl")
+include("CL.jl")
+export ENM,load_graph,reset_config!,run_md!,calc_elastic_jacobian,calc_modes,Trainer_CL,calc_strain_f,step!
 
-using .ENM
-using .TrainerCL
 
-export ENM, Trainer_CL, step!, run_md!, calc_strain_f, clamp_eta!, learn_k!, calc_modes
 
-end
+end # module PhyLearn_EN

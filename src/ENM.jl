@@ -1,4 +1,3 @@
-module ENM
 
 using LinearAlgebra, Random
 
@@ -176,3 +175,4 @@ function calc_modes(enm::ENM)
     J = calc_elastic_jacobian(enm)
     eigen(J)
 end
+
