@@ -82,6 +82,15 @@ function ENM(filename; m=1.0, T0=0.0,seed=123)
                m)
 end
 
+function cal_degree(enm::ENM)
+    deg = zeros(Int, enm.n)
+    @inbounds for (u,v) in enm.edges
+        deg[u] += 1
+        deg[v] += 1
+    end
+    return deg
+end
+
 function cal_elastic_force!(enm::ENM)
     fill!(enm.force, 0.0)
 
@@ -287,3 +296,29 @@ function cal_modes(enm::ENM)
     eigen(J)
 end
 
+using Plots
+
+function plot(enm::ENM; camera=(30, 30))
+    x = enm.pts[:, 1]
+    y = enm.pts[:, 2]
+    z = enm.pts[:, 3]
+
+    plt = plot3d(legend=false, camera=camera)
+
+    scatter3d!(plt, x, y, z;
+               markersize=5,
+               markercolor=:blue,
+               label="Nodes")
+
+    for i in 1:enm.ne
+        u, v = enm.edges[i]
+        plot3d!(plt,
+                [x[u], x[v]],
+                [y[u], y[v]],
+                [z[u], z[v]];
+                linecolor=:black,
+                label="")
+    end
+
+    return plt
+end
