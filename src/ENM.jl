@@ -1,6 +1,6 @@
 
 using LinearAlgebra, Random
-
+using Plots
 function load_graph(filename)
 ####---------------------
 # load graph from a text file
@@ -296,7 +296,6 @@ function cal_modes(enm::ENM)
     eigen(J)
 end
 
-using Plots
 
 function plot(enm::ENM; camera=(30, 30))
     x = enm.pts[:, 1]
