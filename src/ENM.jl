@@ -261,7 +261,7 @@ function quench_fire!(enm::ENM; dt::Float64=0.005, max_steps::Int=100_000, force
     return (:max_steps_reached, max_steps, maximum(abs.(F)))
 end
 
-
+ 
 function cal_elastic_jacobian(enm::ENM)
     J = zeros(3*enm.n, 3*enm.n)
 
@@ -297,7 +297,7 @@ function cal_modes(enm::ENM)
 end
 
 
-function plot(enm::ENM; camera=(30, 30))
+function plot_net(enm::ENM; camera=(30, 30), color=:nothing)
     x = enm.pts[:, 1]
     y = enm.pts[:, 2]
     z = enm.pts[:, 3]
@@ -309,15 +309,28 @@ function plot(enm::ENM; camera=(30, 30))
                markercolor=:blue,
                label="Nodes")
 
+    # prepare edge colors when requested
+    edge_colors = nothing
+    if color == "k" || color == :k
+        kvals = enm.k
+        kmin = minimum(kvals)
+        kmax = maximum(kvals)
+        rng = kmax > kmin ? (kmax - kmin) : 1.0
+        cmap = cgrad(:viridis)
+        edge_colors = [cmap((kv - kmin) / rng) for kv in kvals]
+    end
+
     for i in 1:enm.ne
         u, v = enm.edges[i]
+        lc = edge_colors === nothing ? :black : edge_colors[i]
         plot3d!(plt,
                 [x[u], x[v]],
                 [y[u], y[v]],
                 [z[u], z[v]];
-                linecolor=:black,
+                linecolor=lc,
                 label="")
     end
 
     return plt
 end
+
