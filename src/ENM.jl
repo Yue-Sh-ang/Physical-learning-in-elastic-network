@@ -157,6 +157,8 @@ end
 
 function reset_config!(enm::ENM)
     enm.pts .= enm.pts0
+    fill!(enm.vel, 0.0)
+    fill!(enm.force, 0.0)
     return nothing
 end
 
