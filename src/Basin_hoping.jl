@@ -19,7 +19,8 @@ function kabsch(P::Matrix{Float64}, Q::Matrix{Float64})
     end
     return Matrix{Float64}(R)
 end
-'''using kabsch algorithm to canonicalize pts'''
+
+"using kabsch algorithm to canonicalize pts"
 function canonicalize_pts(pts::Matrix{Float64}, ref_centered::Matrix{Float64})
     @assert size(pts) == size(ref_centered)
 
