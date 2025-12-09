@@ -1,0 +1,7 @@
+# Ignore Jupyter auto-save checkpoints
+.ipynb_checkpoints/
+
+# Ignore notebooks
+*.ipynb
+
+
