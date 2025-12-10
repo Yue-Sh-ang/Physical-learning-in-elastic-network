@@ -42,7 +42,7 @@ end
 
 
 
-function clamp_eta!(tr::Trainer_CL,strain_f::Vector{Float64},eta=1.0)
+function clamp_eta!(tr::Trainer_CL,strain_f::Vector{Float64},eta)
     
     for (ido,(edge, strain_t, stiff)) in enumerate(tr.output)
         strain_c = strain_f[ido] + (strain_t - strain_f[ido])*eta
@@ -68,9 +68,9 @@ function step!(tr::Trainer_CL,T;sf_old= nothing, eta=1.0, alpha=1.0, step_md=10)
     sf_new = zeros(length(tr.output))
 
     if sf_old != nothing
-        clamp_eta!(tr,sf_old; eta=eta)
+        clamp_eta!(tr,sf_old,eta)
     else
-        clamp_eta!(tr,zeros(length(tr.output)); eta=eta)
+        clamp_eta!(tr,zeros(length(tr.output)), eta)
     end
     
 
