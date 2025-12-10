@@ -44,8 +44,8 @@ end
 
 function clamp_eta!(tr::Trainer_CL,strain_f::Vector{Float64},eta=1.0)
     
-    for id,(edge, strain_t, stiff) in enumerate(tr.output)
-        strain_c = strain_f[id] + (strain_t - strain_f[id])*eta
+    for (ido,(edge, strain_t, stiff)) in enumerate(tr.output)
+        strain_c = strain_f[ido] + (strain_t - strain_f[ido])*eta
         put_stain!(tr.net_c, edge, strain_c; k=stiff)
     end
 end
@@ -91,8 +91,8 @@ function step!(tr::Trainer_CL,T;sf_old= nothing, eta=1.0, alpha=1.0, step_md=10)
             end
         end
         #update current free strains
-        for (id,(edge,_,_,current_strain)) in enumerate(tr.output)
-            sf_new[id] += cal_strain(tr.net_f, edge)
+        for (ido,(edge,_,_,current_strain)) in enumerate(tr.output)
+            sf_new[ido] += cal_strain(tr.net_f, edge)
         end
     end
 
