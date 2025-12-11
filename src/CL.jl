@@ -8,8 +8,8 @@ const NORMAL = 0
 
 
 mutable struct Trainer_CL
-    input::Vector{Tuple{Int,Float64,Float64}}   # (edge, input strain, stiffness)
-    output::Vector{Tuple{Int,Float64,Float64}} # (edge, target strain, stiffness)
+    input::Vector{Tuple{Int,Float64,Float64,Float64}}   # (edge, input strain, stiffness, l0)
+    output::Vector{Tuple{Int,Float64,Float64,Float64}} # (edge, target strain, stiffness,l0)
     edgetype::Vector{Int}    # 0: free, 1: input, 2: output
     net_f::ENM
     net_c::ENM
@@ -24,29 +24,30 @@ function Trainer_CL(net::ENM,
     net_c = deepcopy(net)
 
     # modify training masks + rest lengths + stiffnesses
-    for (edge, strain, stiff) in input
+    input_construct = [(edge, strain, stiff, net.l0[edge]) for (edge, strain, stiff) in input]
+    for (edge, strain, stiff, l0) in input_construct
         edgetype[edge] = INPUT
-        put_stain!(net_f, edge, strain; k=stiff)
-        put_stain!(net_c, edge, strain; k=stiff)
+        put_strain!(net_f, edge, l0*(1+strain); k=stiff)
+        put_strain!(net_c, edge, l0*(1+strain); k=stiff)
     end
     
-
-    for (edge, _, _) in output
+    output_construct = [(edge, strain, stiff, net.l0[edge]) for (edge, strain, stiff) in output]
+    for (edge, strain, stiff, l0) in output_construct
         edgetype[edge] = OUTPUT
         net_f.k[edge] = 0.0   
         net_c.k[edge] = 0.0
     end
 
-    return Trainer_CL(input, output, edgetype, net_f, net_c)
+    return Trainer_CL(input_construct, output_construct, edgetype, net_f, net_c)
 end
 
 
 
 function clamp_eta!(tr::Trainer_CL,strain_f::Vector{Float64},eta)
     
-    for (ido,(edge, strain_t, stiff)) in enumerate(tr.output)
+    for (ido,(edge, strain_t, stiff, l0)) in enumerate(tr.output)
         strain_c = strain_f[ido] + (strain_t - strain_f[ido])*eta
-        put_stain!(tr.net_c, edge, strain_c; k=stiff)
+        put_strain!(tr.net_c, edge, l0*(1+strain_c); k=stiff)
     end
 end
 
@@ -91,8 +92,8 @@ function step!(tr::Trainer_CL,T;sf_old= nothing, eta=1.0, alpha=1.0, step_md=10)
             end
         end
         #update current free strains
-        for (ido,(edge,_,_)) in enumerate(tr.output)
-            sf_new[ido] += cal_strain(tr.net_f, edge)
+        for (ido,(edge,_,_,l0)) in enumerate(tr.output)
+            sf_new[ido] += cal_strain(tr.net_f, edge, l0)
         end
     end
 

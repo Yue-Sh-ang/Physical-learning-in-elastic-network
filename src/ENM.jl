@@ -141,16 +141,16 @@ function cal_kinetic_energy(enm::ENM)
     return KE
 end
 
-function cal_strain(enm::ENM, edge::Int)
+function cal_strain(enm::ENM, edge::Int,l0::Float64= nothing)
     (u, v) = enm.edges[edge]
     dx = enm.pts[v, :] .- enm.pts[u, :]
     dist = norm(dx)
-    l0 = enm.l0[edge]
+    l0 = l0 === nothing ? enm.l0[edge] : l0
     return (dist - l0) / l0
 end
 
-function put_stain!(enm::ENM, edge::Int, strain::Float64;k=100)
-    enm.l0[edge] *= (1 + strain)
+function put_strain!(enm::ENM, edge::Int, l0::Float64;k=100)
+    enm.l0[edge] = l0
     enm.k[edge] = k
     return nothing
 end
