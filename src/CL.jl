@@ -54,7 +54,7 @@ function clamp_eta!(tr::Trainer_CL,strain_f::Vector{Float64},eta)
 end
 
 
-function update_k!(tr::Trainer_CL, grad::Vector{Float64}, alpha, vmin=1e-3, vmax=200.0)
+function learn_k!(tr::Trainer_CL, grad::Vector{Float64}, alpha, vmin=1e-3, vmax=200.0)
     kf = tr.net_f.k
     kc = tr.net_c.k
     idxs = tr.trainable_edges   # indices where edge_type == 0
