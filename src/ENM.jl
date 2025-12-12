@@ -1,6 +1,21 @@
 
 using LinearAlgebra, Random
 using Plots
+
+struct ENM
+    n::Int
+    ne::Int
+    pts0::Matrix{Float64}     # n × 3
+    pts::Matrix{Float64}     # n × 3
+    vel::Matrix{Float64}     # n × 3
+    force::Matrix{Float64}   # n × 3
+    edges::Vector{Tuple{Int,Int}}
+    k::Vector{Float64}
+    l0::Vector{Float64}
+    m::Float64 #assuming uniform mass
+    
+end
+
 function load_graph(filename)
  ####---------------------
  # load graph from a text file
@@ -63,19 +78,7 @@ function save_graph(filename, enm::ENM)
     end
 end
 
-struct ENM
-    n::Int
-    ne::Int
-    pts0::Matrix{Float64}     # n × 3
-    pts::Matrix{Float64}     # n × 3
-    vel::Matrix{Float64}     # n × 3
-    force::Matrix{Float64}   # n × 3
-    edges::Vector{Tuple{Int,Int}}
-    k::Vector{Float64}
-    l0::Vector{Float64}
-    m::Float64 #assuming uniform mass
-    
-end
+
 
 function ENM(filename; m=1.0, T0=0.0,seed=123)
     
