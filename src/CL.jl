@@ -83,11 +83,8 @@ function update_Gradient!(tr::Trainer_CL, grad::Vector{Float64})
 
     @inbounds @simd for ide in eachindex(l0f)
         
-        u = edges[ide, 1]
-        v = edges[ide, 2]
-    
-
-    
+        u,v = edges[ide]
+        
         dx_f = pts_f[v, 1] - pts_f[u, 1]
         dy_f = pts_f[v, 2] - pts_f[u, 2]
         dz_f = pts_f[v, 3] - pts_f[u, 3]
