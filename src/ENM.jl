@@ -339,38 +339,78 @@ function cal_modes(enm::ENM)
 end
 
 
-function plot_net(enm::ENM; camera=(30, 30), color=:nothing)
+function plot_net(
+    enm::ENM;
+    source::Union{Nothing, Int, AbstractVector{<:Int}} = nothing,
+    target::Union{Nothing, Int, AbstractVector{<:Int}} = nothing,
+    camera = (30, 30),
+    color = nothing
+ )
+
     x = enm.pts[:, 1]
     y = enm.pts[:, 2]
     z = enm.pts[:, 3]
 
     plt = plot3d(legend=false, camera=camera)
 
+    # ---- nodes ----
     scatter3d!(plt, x, y, z;
-               markersize=5,
-               markercolor=:blue,
-               label="Nodes")
+        markersize=5,
+        markercolor=:grey,
+        label=""
+    )
 
-    # prepare edge colors when requested
+    # ---- edge colors ----
     edge_colors = nothing
-    if color == "k" || color == :k
+    if color == :k || color == "k"
         kvals = enm.k
-        kmin = minimum(kvals)
-        kmax = maximum(kvals)
+        kmin, kmax = extrema(kvals)
         rng = kmax > kmin ? (kmax - kmin) : 1.0
         cmap = cgrad(:viridis)
         edge_colors = [cmap((kv - kmin) / rng) for kv in kvals]
     end
 
+    # ---- draw edges ----
     for i in 1:enm.ne
         u, v = enm.edges[i]
-        lc = edge_colors === nothing ? :black : edge_colors[i]
-        plot3d!(plt,
+        lc = edge_colors === nothing ? :grey : edge_colors[i]
+        plot3d!(plt, [x[u], x[v]], [y[u], y[v]], [z[u], z[v]];
+            linecolor=lc,
+            label=""
+        )
+    end
+
+    # ---- helper to normalize indices ----
+    _asvec(idx) = idx isa AbstractVector ? idx : [idx]
+
+    # ---- source edges ----
+    if source !== nothing
+        for i in _asvec(source)
+            u, v = enm.edges[i]
+            scatter3d!(plt,
                 [x[u], x[v]],
                 [y[u], y[v]],
                 [z[u], z[v]];
-                linecolor=lc,
-                label="")
+                markersize=6,
+                markercolor=:darkblue,
+                label="input"
+            )
+        end
+    end
+
+    # ---- target edges ----
+    if target !== nothing
+        for i in _asvec(target)
+            u, v = enm.edges[i]
+            scatter3d!(plt,
+                [x[u], x[v]],
+                [y[u], y[v]],
+                [z[u], z[v]];
+                markersize=6,
+                markercolor=:darkred,
+                label="output"
+            )
+        end
     end
 
     return plt
