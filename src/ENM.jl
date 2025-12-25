@@ -3,6 +3,7 @@ using LinearAlgebra, Random
 using Plots
 
 struct ENM
+    dim::Int                    #adding dim
     n::Int
     ne::Int
     pts0::Matrix{Float64}     # n × 3
@@ -12,18 +13,19 @@ struct ENM
     k::Vector{Float64}
     l0::Vector{Float64}
     m::Float64 #assuming uniform mass
-    
+
 end
 
 function load_graph(filename)
  ####---------------------
  # load graph from a text file
  # format:
+ #dim
  # n
- # x1 y1 z1
- # x2 y2 z2
+ # x1 y1 (z1)
+ # x2 y2 (z2)
  # ...
- # xn yn zn
+ # xn yn (zn)
  # ne
  # node1_1 node1_2 stiffness1 l0_1
  # node2_1 node2_2 stiffness2 l0_2
@@ -32,11 +34,12 @@ function load_graph(filename)
     lines = readlines(filename)
     idx = 1
     ### --- Read points ---
+    dim = parse(Int, lines[idx]); idx += 1
     n = parse(Int, lines[idx]); idx += 1
-    pts = zeros(n, 3)
+    pts = zeros(n, dim)
     for i in 1:n
-        x, y, z = parse.(Float64, split(lines[idx]))
-        pts[i, :] .= (x, y, z)
+        coords = parse.(Float64, split(lines[idx]))
+        pts[i, :] .= coords
         idx += 1
     end
 
@@ -60,11 +63,12 @@ function load_graph(filename)
         idx += 1
     end
 
-    return n, ne, pts, edges, stiffness, l0
+    return dim,n, ne, pts, edges, stiffness, l0
 end
 
-function save_graph(filename, enm::ENM)
+function save_enm(filename, enm::ENM)
     open(filename, "w") do io
+        println(io, enm.dim)  
         println(io, enm.n)
         for i in 1:enm.n
             println(io, join(enm.pts[i, :], " "))
@@ -82,19 +86,36 @@ end
 function ENM(filename; m=1.0, T0=0.0,seed=123)
     
     
-    n, ne, pts, edges,kvec, lvec = load_graph(filename)
+    dim,n, ne, pts, edges,kvec, lvec = load_graph(filename)
     pts0=deepcopy(pts)
-    vel   = zeros(n, 3)
+    vel   = zeros(n, dim)
     
 
     # initial velocities
     Random.seed!(seed)
     for i in 1:n
-        vel[i, :] = randn(3) * sqrt(T0/m)
+        vel[i, :] = randn(dim) * sqrt(T0/m)
     end
 
-    return ENM(n, ne, pts0,pts, vel, edges, kvec, lvec,
+    return ENM(dim,n, ne, pts0,pts, vel, edges, kvec, lvec,
                m)
+end
+
+function add_edge!(enm::ENM, nodei::Int, nodej::Int; k::Float64=0.0)
+    #adding edge without strain ( l0 set to current distance)
+    if nodei < 1 || nodei > enm.n || nodej < 1 || nodej > enm.n
+        error("Node indices out of bounds.")
+    end
+    if nodei,nodej in enm.edges || nodej,nodei in enm.edges
+        error("Edge already exists between node $nodei and node $nodej.")
+    end
+
+    push!(enm.edges, (nodei, nodej))
+    l0_norm=norm(enm.pts[nodei,:]-enm.pts[nodej,:])
+    push!(enm.l0, l0_norm)
+    push!(enm.k, k)
+    enm.ne += 1
+    return enm.ne
 end
 
 function cal_degree(enm::ENM)
@@ -107,41 +128,64 @@ function cal_degree(enm::ENM)
 end
 
 
-function cal_elastic_force!(force::AbstractMatrix{<:Real}, enm::ENM)
-    
-    fill!(force, 0.0)
+function cal_elastic_force!(force::AbstractMatrix{T}, enm::ENM) where {T<:Real}
+    fill!(force, zero(T))
 
     pts   = enm.pts
     edges = enm.edges
     k     = enm.k
     l0    = enm.l0
 
-    @inbounds for i in 1:enm.ne
-        u, v = edges[i]
+    dim = enm.dim
+    @assert dim == 2 || dim == 3  #dim is either 2 or 3
 
-        dx1 = pts[v,1] - pts[u,1]
-        dx2 = pts[v,2] - pts[u,2]
-        dx3 = pts[v,3] - pts[u,3]
+    if dim == 2
+        @inbounds for i in 1:enm.ne
+            u, v = edges[i]
 
-        r2 = dx1*dx1 + dx2*dx2 + dx3*dx3
-        if r2 == 0.0
-            continue
+            dx1 = pts[v,1] - pts[u,1]
+            dx2 = pts[v,2] - pts[u,2]
+
+            r2 = dx1*dx1 + dx2*dx2
+            r2 == 0 && continue
+
+            r = sqrt(r2)
+            s = k[i] * (r - l0[i]) / r
+
+            f1 = s*dx1
+            f2 = s*dx2
+
+            force[u,1] += f1; force[v,1] -= f1
+            force[u,2] += f2; force[v,2] -= f2
         end
-        r = sqrt(r2)
 
-        # Hookean spring: f = k (r - l0) * (dx / r)
-        scale = k[i] * (r - l0[i]) / r
+    else # dim == 3
+        @inbounds for i in 1:enm.ne
+            u, v = edges[i]
 
-        fx = scale * dx1
-        fy = scale * dx2
-        fz = scale * dx3
+            dx1 = pts[v,1] - pts[u,1]
+            dx2 = pts[v,2] - pts[u,2]
+            dx3 = pts[v,3] - pts[u,3]
 
-        force[u,1] += fx;  force[u,2] += fy;  force[u,3] += fz
-        force[v,1] -= fx;  force[v,2] -= fy;  force[v,3] -= fz
+            r2 = dx1*dx1 + dx2*dx2 + dx3*dx3
+            r2 == 0 && continue
+
+            r = sqrt(r2)
+            s = k[i] * (r - l0[i]) / r
+
+            f1 = s*dx1
+            f2 = s*dx2
+            f3 = s*dx3
+
+            force[u,1] += f1; force[v,1] -= f1
+            force[u,2] += f2; force[v,2] -= f2
+            force[u,3] += f3; force[v,3] -= f3
+        end
     end
 
     return nothing
 end
+
 
 
 function cal_elastic_energy(enm::ENM)
@@ -172,16 +216,20 @@ function cal_kinetic_energy(enm::ENM)
     return KE
 end
 
-function cal_strain(enm::ENM, edge::Int,l0::Float64= nothing)
-    (u, v) = enm.edges[edge]
-    dx = enm.pts[v, :] .- enm.pts[u, :]
-    dist = norm(dx)
-    l0 = l0 === nothing ? enm.l0[edge] : l0
+function cal_strain(enm::ENM, edge::Int)
+    (nodei, nodej) = enm.edges[edge]
+     # calculate strain of a specific edge
+    dist = norm(enm.pts[nodej, :] .- enm.pts[nodei, :])
+    l0 = norm(enm.pts0[nodej, :] .- enm.pts0[nodei, :])
+   
     return (dist - l0) / l0
 end
 
-function put_strain!(enm::ENM, edge::Int, l0::Float64;k=100)
-    enm.l0[edge] = l0
+#put strain on an adge
+function put_strain!(enm::ENM, edge::Int,strain::Float64; k=100)
+    (u,v)= enm.edges[edge]
+    l0 = norm(enm.pts0[v, :] .- enm.pts0[u, :])
+    enm.l0[edge] = l0 * (1 + strain)
     enm.k[edge] = k
     return nothing
 end
@@ -192,6 +240,9 @@ function reset_config!(enm::ENM)
     
     return nothing
 end
+
+
+#  ---------dynamics ---------
 #GJF method
 function run_md!(
     enm::ENM, T;
@@ -237,40 +288,87 @@ function run_md!(
 end
 
 
+
 function quench_fire!(enm::ENM; dt::Float64=0.005, max_steps::Int=100_000, force_tol::Float64=1e-6)
 
     # FIRE parameters
-    α     = 0.1; finc  = 1.1
-    fdec  = 0.5; αdec  = 0.99
-    dtmax = 10dt; Nmin  = 5
+    α0    = 0.1
+    α     = α0
+    finc  = 1.1
+    fdec  = 0.5
+    αdec  = 0.99
+    dtmax = 10*dt
+    Nmin  = 5
     Npos  = 0
 
     # unpack
-    pts  = enm.pts; vel  = enm.vel
-    F    = similar(enm.vel); m    = enm.m
+    pts  = enm.pts
+    vel  = enm.vel
+    F    = similar(vel)
+    m    = enm.m
     n    = enm.n
+    dim  = enm.dim
+    @assert dim == 2 || dim == 3
 
-    for step in 1:max_steps
-
+    @inbounds for step in 1:max_steps
         cal_elastic_force!(F, enm)
 
-        maxF = maximum(abs.(F))
+        # maxF = maximum(abs.(F)) but without allocation
+        maxF = 0.0
+        if dim == 2
+            for i in 1:n
+                f1 = F[i,1]; f2 = F[i,2]
+                af1 = abs(f1); af2 = abs(f2)
+                maxF = max(maxF, af1, af2)
+            end
+        else
+            for i in 1:n
+                f1 = F[i,1]; f2 = F[i,2]; f3 = F[i,3]
+                af1 = abs(f1); af2 = abs(f2); af3 = abs(f3)
+                maxF = max(maxF, af1, af2, af3)
+            end
+        end
+
         if maxF < force_tol
             return (:converged, step, maxF)
         end
 
-        
-        # Velocity update (Euler)
-        
-        @inbounds for i in 1:n
-            vel[i,1] += dt * F[i,1] / m
-            vel[i,2] += dt * F[i,2] / m
-            vel[i,3] += dt * F[i,3] / m
+        # Euler velocity update + compute power and norms in the same pass
+        P     = 0.0
+        v2sum = 0.0
+        f2sum = 0.0
+
+        if dim == 2
+            for i in 1:n
+                f1 = F[i,1]; f2 = F[i,2]
+
+                v1 = vel[i,1] + dt * f1 / m
+                v2 = vel[i,2] + dt * f2 / m
+                vel[i,1] = v1
+                vel[i,2] = v2
+
+                P     += v1*f1 + v2*f2
+                v2sum += v1*v1 + v2*v2
+                f2sum += f1*f1 + f2*f2
+            end
+        else
+            for i in 1:n
+                f1 = F[i,1]; f2 = F[i,2]; f3 = F[i,3]
+
+                v1 = vel[i,1] + dt * f1 / m
+                v2 = vel[i,2] + dt * f2 / m
+                v3 = vel[i,3] + dt * f3 / m
+                vel[i,1] = v1
+                vel[i,2] = v2
+                vel[i,3] = v3
+
+                P     += v1*f1 + v2*f2 + v3*f3
+                v2sum += v1*v1 + v2*v2 + v3*v3
+                f2sum += f1*f1 + f2*f2 + f3*f3
+            end
         end
 
-        # Fire Power
-        P = sum(vel .* F)
-
+        # FIRE timestep / alpha adaptation
         if P > 0
             Npos += 1
             if Npos > Nmin
@@ -278,68 +376,204 @@ function quench_fire!(enm::ENM; dt::Float64=0.005, max_steps::Int=100_000, force
                 α *= αdec
             end
         else
-            # negative power → reset
             Npos = 0
             dt *= fdec
-            α = 0.1
+            α = α0
             fill!(vel, 0.0)
+            # (Optional but common: continue to next step after reset)
         end
 
-       
-        # Velocity mixing
-        vnorm = sqrt(sum(vel.^2))
-        fnorm = sqrt(sum(F.^2))
+        # Velocity mixing: v <- (1-α)v + α |v|/|F| F
+        if v2sum > 0 && f2sum > 0
+            vnorm = sqrt(v2sum)
+            fnorm = sqrt(f2sum)
+            s = α * vnorm / fnorm   # standard FIRE form
 
-        if vnorm > 0 && fnorm > 0
-            mix = α * fnorm / vnorm
-            vel .= (1 - α) .* vel .+ mix .* F
+            if dim == 2
+                for i in 1:n
+                    vel[i,1] = (1-α)*vel[i,1] + s*F[i,1]
+                    vel[i,2] = (1-α)*vel[i,2] + s*F[i,2]
+                end
+            else
+                for i in 1:n
+                    vel[i,1] = (1-α)*vel[i,1] + s*F[i,1]
+                    vel[i,2] = (1-α)*vel[i,2] + s*F[i,2]
+                    vel[i,3] = (1-α)*vel[i,3] + s*F[i,3]
+                end
+            end
         end
 
-
-        # Position update
-        pts .+= dt .* vel
-    end
-
-    return (:max_steps_reached, max_steps, maximum(abs.(F)))
-end
-
- 
-function cal_elastic_jacobian(enm::ENM)
-    J = zeros(3*enm.n, 3*enm.n)
-
-    @inbounds for i in 1:enm.ne
-        (u,v) = enm.edges[i]
-
-        dx = enm.pts[v,:] .- enm.pts[u,:]
-        dist = norm(dx)
-        dist == 0 && continue
-
-        k  = enm.k[i]
-        l0 = enm.l0[i]
-
-        term1 = k*(1 - l0/dist)
-        term2 = k*l0/(dist^3)
-
-        for a in 1:3
-            for b in 1:3
-                val = term1*(a==b) + term2*dx[a]*dx[b]
-                J[3u-2+a, 3u-2+b] += val
-                J[3v-2+a, 3v-2+b] += val
-                J[3u-2+a, 3v-2+b] -= val
-                J[3v-2+a, 3u-2+b] -= val
+        # Position update: r <- r + dt v
+        if dim == 2
+            for i in 1:n
+                pts[i,1] += dt * vel[i,1]
+                pts[i,2] += dt * vel[i,2]
+            end
+        else
+            for i in 1:n
+                pts[i,1] += dt * vel[i,1]
+                pts[i,2] += dt * vel[i,2]
+                pts[i,3] += dt * vel[i,3]
             end
         end
     end
+
+    # if we exit loop, F is from last step; maxF recompute cheaply:
+    cal_elastic_force!(F, enm)
+    maxF = 0.0
+    @inbounds for x in F
+        ax = abs(x)
+        maxF = ax > maxF ? ax : maxF
+    end
+
+    return (:max_steps_reached, max_steps, maxF)
+end
+
+
+#--------- mode analysis --------- 
+
+function cal_elastic_jacobian(enm::ENM)
+    dim = enm.dim
+    @assert dim == 2 || dim == 3
+
+    T = eltype(enm.pts)
+    J = zeros(T, dim*enm.n, dim*enm.n)
+
+    pts   = enm.pts
+    edges = enm.edges
+    k     = enm.k
+    l0    = enm.l0
+
+    @inbounds for i in 1:enm.ne
+        u, v = edges[i]
+
+        # dx and dist (no allocation)
+        dist2 = zero(T)
+        dx = ntuple(d -> pts[v,d] - pts[u,d], dim)
+        @inbounds for d in 1:dim
+            dist2 += dx[d]*dx[d]
+        end
+        dist2 == 0 && continue
+        dist = sqrt(dist2)
+
+        ki  = k[i]
+        l0i = l0[i]
+
+        term1 = ki * (1 - l0i/dist)
+        term2 = ki * l0i / (dist^3)
+
+        bu = (u-1)*dim
+        bv = (v-1)*dim
+
+        @inbounds for a in 1:dim, b in 1:dim
+            val = term1*(a==b) + term2*dx[a]*dx[b]
+            J[bu+a, bu+b] += val
+            J[bv+a, bv+b] += val
+            J[bu+a, bv+b] -= val
+            J[bv+a, bu+b] -= val
+        end
+    end
+
     return J
 end
+
 
 function cal_modes(enm::ENM)
     J = cal_elastic_jacobian(enm)
     eigen(J)
 end
 
+#--------- plotting functions ---------
 
-function plot_net(
+
+function plot_net(enm::ENM;
+    source::Union{Nothing, Int, AbstractVector{<:Int}} = nothing,
+    target::Union{Nothing, Int, AbstractVector{<:Int}} = nothing,
+    camera = (30, 30),
+    color=nothing)
+    if enm.dim == 2
+        return plot_net_2d(enm; source=source, target=target, color=color)
+    elseif enm.dim == 3
+        return plot_net_3d(enm; source=source, target=target, camera=camera, color=color)
+    else
+        error("Unsupported dimension: $(enm.dim). Only 2D and 3D are supported.")
+    end
+end
+
+function plot_net_2d(
+    enm::ENM;
+    source::Union{Nothing, Int, AbstractVector{<:Int}} = nothing,
+    target::Union{Nothing, Int, AbstractVector{<:Int}} = nothing,
+    color = nothing
+ )
+
+    x = enm.pts[:, 1]
+    y = enm.pts[:, 2]
+
+    plt = plot(legend=false)
+
+    # ---- nodes ----
+    scatter!(plt, x, y;
+        markersize=5,
+        markercolor=:grey,
+        label=""
+    )
+
+    # ---- edge colors ----
+    edge_colors = nothing
+    if color == :k || color == "k"
+        kvals = enm.k
+        kmin, kmax = extrema(kvals)
+        rng = kmax > kmin ? (kmax - kmin) : 1.0
+        cmap = cgrad(:viridis)
+        edge_colors = [cmap((kv - kmin) / rng) for kv in kvals]
+    end
+
+    # ---- draw edges ----
+    for i in 1:enm.ne
+        u, v = enm.edges[i]
+        lc = edge_colors === nothing ? :grey : edge_colors[i]
+        plot!(plt, [x[u], x[v]], [y[u], y[v]];
+            linecolor=lc,
+            label=""
+        )
+    end
+
+    # ---- helper to normalize indices ----
+    _asvec(idx) = idx isa AbstractVector ? idx : [idx]
+
+    # ---- source edges ----
+    if source !== nothing
+        for i in _asvec(source)
+            u, v = enm.edges[i]
+            scatter!(plt,
+                [x[u], x[v]],
+                [y[u], y[v]];
+                markersize=6,
+                markercolor=:darkblue,
+                label="input"
+            )
+        end
+    end
+
+    # ---- target edges ----
+    if target !== nothing
+        for i in _asvec(target)
+            u, v = enm.edges[i]
+            scatter!(plt,
+                [x[u], x[v]],
+                [y[u], y[v]];
+                markersize=6,
+                markercolor=:darkred,
+                label="output"
+            )
+        end
+    end
+
+    return plt
+end
+
+function plot_net_3d(
     enm::ENM;
     source::Union{Nothing, Int, AbstractVector{<:Int}} = nothing,
     target::Union{Nothing, Int, AbstractVector{<:Int}} = nothing,
