@@ -106,7 +106,7 @@ function add_edge!(enm::ENM, nodei::Int, nodej::Int; k::Float64=0.0)
     if nodei < 1 || nodei > enm.n || nodej < 1 || nodej > enm.n
         error("Node indices out of bounds.")
     end
-    if nodei,nodej in enm.edges || nodej,nodei in enm.edges
+    if (nodei,nodej) in enm.edges || (nodej,nodei) in enm.edges
         error("Edge already exists between node $nodei and node $nodej.")
     end
 
