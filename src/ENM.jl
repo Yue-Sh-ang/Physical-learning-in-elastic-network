@@ -4,12 +4,11 @@ using Plots
 
 struct ENM
     dim::Int                    #adding dim
-    n::Int
-    ne::Int
+    n::Int                   # number of nodes
     pts0::Matrix{Float64}     # n × 3
     pts::Matrix{Float64}     # n × 3
     vel::Matrix{Float64}     # n × 3
-    edges::Vector{Tuple{Int,Int}}
+    edges::Vector{Tuple{Int,Int}} #ne edges
     k::Vector{Float64}
     l0::Vector{Float64}
     m::Float64 #assuming uniform mass
@@ -63,7 +62,7 @@ function load_graph(filename)
         idx += 1
     end
 
-    return dim,n, ne, pts, edges, stiffness, l0
+    return dim,n, pts, edges, stiffness, l0
 end
 
 function save_enm(filename, enm::ENM)
@@ -73,8 +72,8 @@ function save_enm(filename, enm::ENM)
         for i in 1:enm.n
             println(io, join(enm.pts[i, :], " "))
         end
-        println(io, enm.ne)
-        for e in 1:enm.ne
+        println(io, length(enm.edges))
+        for e in 1:length(enm.edges)
             u, v = enm.edges[e]
             println(io, "$(u-1) $(v-1) $(enm.k[e]) $(enm.l0[e])")
         end
@@ -86,7 +85,7 @@ end
 function ENM(filename; m=1.0, T0=0.0,seed=123)
     
     
-    dim,n, ne, pts, edges,kvec, lvec = load_graph(filename)
+    dim,n, pts, edges,kvec, lvec = load_graph(filename)
     pts0=deepcopy(pts)
     vel   = zeros(n, dim)
     
@@ -97,7 +96,7 @@ function ENM(filename; m=1.0, T0=0.0,seed=123)
         vel[i, :] = randn(dim) * sqrt(T0/m)
     end
 
-    return ENM(dim,n, ne, pts0,pts, vel, edges, kvec, lvec,
+    return ENM(dim,n, pts0,pts, vel, edges, kvec, lvec,
                m)
 end
 
@@ -114,8 +113,7 @@ function add_edge!(enm::ENM, nodei::Int, nodej::Int; k::Float64=0.0)
     l0_norm=norm(enm.pts[nodei,:]-enm.pts[nodej,:])
     push!(enm.l0, l0_norm)
     push!(enm.k, k)
-    enm.ne += 1
-    return enm.ne
+    return length(enm.edges)
 end
 
 function cal_degree(enm::ENM)
@@ -135,12 +133,12 @@ function cal_elastic_force!(force::AbstractMatrix{T}, enm::ENM) where {T<:Real}
     edges = enm.edges
     k     = enm.k
     l0    = enm.l0
-
+    ne= length(edges)
     dim = enm.dim
     @assert dim == 2 || dim == 3  #dim is either 2 or 3
 
     if dim == 2
-        @inbounds for i in 1:enm.ne
+        @inbounds for i in 1:ne
             u, v = edges[i]
 
             dx1 = pts[v,1] - pts[u,1]
@@ -160,7 +158,7 @@ function cal_elastic_force!(force::AbstractMatrix{T}, enm::ENM) where {T<:Real}
         end
 
     else # dim == 3
-        @inbounds for i in 1:enm.ne
+        @inbounds for i in 1:ne
             u, v = edges[i]
 
             dx1 = pts[v,1] - pts[u,1]
@@ -190,8 +188,8 @@ end
 
 function cal_elastic_energy(enm::ENM)
     E = 0.0
-
-    @inbounds for i in 1:enm.ne
+    ne    = length(enm.edges)
+    @inbounds for i in 1:ne
         (u,v) = enm.edges[i]
 
         dx = enm.pts[v, :] .- enm.pts[u, :]
@@ -443,8 +441,8 @@ function cal_elastic_jacobian(enm::ENM)
     edges = enm.edges
     k     = enm.k
     l0    = enm.l0
-
-    @inbounds for i in 1:enm.ne
+    ne    = length(edges)
+    @inbounds for i in 1:ne
         u, v = edges[i]
 
         # dx and dist (no allocation)
@@ -530,7 +528,8 @@ function plot_net_2d(
     end
 
     # ---- draw edges ----
-    for i in 1:enm.ne
+    ne=length(enm.edges)
+    for i in 1:ne
         u, v = enm.edges[i]
         lc = edge_colors === nothing ? :grey : edge_colors[i]
         plot!(plt, [x[u], x[v]], [y[u], y[v]];
@@ -605,7 +604,8 @@ function plot_net_3d(
     end
 
     # ---- draw edges ----
-    for i in 1:enm.ne
+    ne=length(enm.edges)
+    for i in 1:ne
         u, v = enm.edges[i]
         lc = edge_colors === nothing ? :grey : edge_colors[i]
         plot3d!(plt, [x[u], x[v]], [y[u], y[v]], [z[u], z[v]];
