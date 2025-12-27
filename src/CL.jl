@@ -140,7 +140,7 @@ function update_grad!(tr::Trainer_CL, grad::Vector{Float64})
     return nothing
 end
 
-function load_trainer_CL(tr::Trainer_CL, filepath::String)
+function load_trainer_CL(tr::Trainer_CL)
     net=deepcopy(tr.net_f)
     input=Vector{Int}()
     output=Vector{Int}()
