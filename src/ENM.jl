@@ -15,7 +15,7 @@ struct ENM
 
 end
 
-function load_graph(filename)
+function load_graph(filename::AbstractString)
  ####---------------------
  # load graph from a text file
  # format:
@@ -65,12 +65,12 @@ function load_graph(filename)
     return dim,n, pts, edges, stiffness, l0
 end
 
-function save_enm(filename, enm::ENM)
+function save_graph(enm::ENM,filename::AbstractString)
     open(filename, "w") do io
         println(io, enm.dim)  
         println(io, enm.n)
         for i in 1:enm.n
-            println(io, join(enm.pts[i, :], " "))
+            println(io, join(enm.pts0[i, :], " "))
         end
         println(io, length(enm.edges))
         for e in 1:length(enm.edges)
@@ -80,6 +80,35 @@ function save_enm(filename, enm::ENM)
     end
 end
 
+function save_pts(enm::ENM, filename::AbstractString)
+    open(filename, "w") do io
+        write(io, enm.pts)
+    end
+end
+
+function load_pts(enm::ENM, filename::AbstractString)
+    pts_new=Matrix{Float64}(undef, enm.n, enm.dim)
+    open(filename, "r") do io
+        read!(io, pts_new)
+    end
+    enm.pts .= pts_new
+    return nothing
+end
+
+function save_k(enm::ENM, filename::AbstractString)
+    open(filename, "w") do io
+        write(io, enm.k)
+    end
+end
+
+function load_k(enm::ENM, filename::AbstractString)
+    k_new=Vector{Float64}(undef, length(enm.k))
+    open(filename, "r") do io
+        read!(io,k_new) 
+    end
+    enm.k .= k_new
+    return nothing
+end
 
 
 function ENM(filename; m=1.0, T0=0.0,seed=123)
