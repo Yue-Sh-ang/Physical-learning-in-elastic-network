@@ -16,49 +16,29 @@ mutable struct Trainer_CL
 end
 
 function Trainer_CL(net::ENM,#the network from allo
-                   input::Vector{Tuple{Int,Int,Float64}} , # (nodei,nodej,input strain)
-                   output::Vector{Tuple{Int,Int,Float64}}  # (nodei,nodej,target strain)
+                   input::Vector{Tuple{Int,Float64,Float64}} , # (edge,input strain,l0)
+                   output::Vector{Tuple{Int,Float64,Float64}}  # (edge,target strain,l0)
                    )
     # this function prepares the basic setting for training
     # denote input and output edges and denote their 
-    ne = length(net.edges)
-    edgetype = zeros(Int, ne)
-    input_construct = Vector{Tuple{Int,Float64,Float64}}()
-    output_construct=Vector{Tuple{Int,Float64,Float64}}()
+    edgetype = zeros(Int,length(net.edges))
 
     net_f = deepcopy(net)
-    
- #  denote input nodes
-    for (i,j,st) in input
-        if (i,j) in net_f.edges || (j,i) in net_f.edges
-            id_input=findfirst(x->x==(i,j),net_f.edges)
-            edgetype[id_input] = INPUT
-            net_f.k[id_input] = 0
-        else
-            id_input=add_edge!(net_f, i, j)    
-            push!(edgetype, INPUT)
-        end
-        l0=norm(net_f.pts0[j,:] .- net_f.pts0[i,:])
-        push!(input_construct, (id_input, st, l0))
+ #  denote input edges
+    for (id_input,st,l0) in input
+        edgetype[id_input] = INPUT
+        net_f.k[id_input] = 0.0
     end
 
- #  denote output nodes
-    for (i,j,st) in output
-        if (i,j) in net_f.edges || (j,i) in net_f.edges
-            id_output=findfirst(x->x==(i,j),net_f.edges)
-            edgetype[id_output] = OUTPUT
-            net_f.k[id_output] = 0
-        else
-            id_output=add_edge!(net_f, i, j)
-            push!(edgetype, OUTPUT)
-        end
-        l0=norm(net_f.pts0[j,:] .- net_f.pts0[i,:])
-        push!(output_construct, (id_output, st, l0))
+ #  denote output edges
+    for (id_output,st,l0) in output
+        edgetype[id_output] = OUTPUT
+        net_f.k[id_output] = 0.0
     end
 
     net_c = deepcopy(net_f)
     trainable_edges = findall(==(NORMAL), edgetype)
-    return Trainer_CL(input_construct, output_construct, trainable_edges, net_f, net_c)
+    return Trainer_CL(input, output, trainable_edges, net_f, net_c)
 end
 
 
@@ -176,7 +156,6 @@ function save_task(tr::Trainer_CL, dir::String)
 end
 
 function load_task(dir::String)
-    enm = ENM(joinpath(dir, "network.txt"))
     input = Vector{Tuple{Int,Float64,Float64}}()
     output= Vector{Tuple{Int,Float64,Float64}}()
 
@@ -203,7 +182,7 @@ function load_task(dir::String)
             push!(output, (edge,st,l0))
         end
     end
-    return enm, input, output
+    return input, output
 
 end
 
