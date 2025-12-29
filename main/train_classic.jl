@@ -12,9 +12,9 @@ taskid=1
 println("Dimension: $(dim), Network ID: $(network_id), taskid: $(taskid), Training Temperature: $(trainT)")
 
 root="/data2/shared/yueshang/julia/classic/"
-net_path = joinpath(root, "/dim$(dim)/network$(network_id)/network.txt")
+net_file = joinpath(root, "/dim$(dim)/network$(network_id)/network.txt")
 task_path = joinpath(root, "/dim$(dim)/network$(network_id)/task$(taskid)/")
-net=ENM(net_path)
+net=ENM(net_file)
 input,output=load_task(task_path)
 train0=Trainer_CL(net,input,output)
 
@@ -33,7 +33,7 @@ end
 
 
 # training loop
-trainpath=joinpath(root, "/dim$(dim)/network$(network_id)/task$(taskid)/trainT$(trainT)_alpha$(alpha)_classic/")
+trainpath=joinpath(task_path, "trainT$(trainT)_alpha$(alpha)_classic/")
 
 t0=time()
 for stepid in 1:trainsteps

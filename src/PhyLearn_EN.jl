@@ -2,7 +2,8 @@ module PhyLearn_EN
 
 include("ENM.jl")
 include("CL.jl")
-include("Basin_hoping.jl")
+include("Allosteric.jl")
+include("MSM.jl")
 export  ENM,save_enm,
         reset_config!,add_edge!,cal_degree,
         run_md!,quench_fire!,
@@ -11,9 +12,12 @@ export  ENM,save_enm,
         cal_elastic_jacobian,cal_modes,
         plot_net,
         #CL
-        Trainer_CL,set_edge_k!,set_edge_l0!,update_k!,update_grad!,load_trainer_CL
-	basin_hopping!
-
+        Trainer_CL,set_edge_k!,set_edge_l0!,update_k!,update_grad!,load_trainer_CL,
+        #allosteric
+        build_graph,choose_new_edge,cal_edge_distance,
+        #Allosteric.jl
+        generate_task,load_task,
+        #MSM:not now
 
 
 end # module PhyLearn_EN

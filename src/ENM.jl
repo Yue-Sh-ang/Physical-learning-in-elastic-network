@@ -243,10 +243,13 @@ function cal_kinetic_energy(enm::ENM)
     return KE
 end
 
-function cal_strain(enm::ENM, edge::Int)
+function cal_strain(enm::ENM, edge::Int;l0::Union{Nothing,Float64}=nothing)
     (nodei, nodej) = enm.edges[edge]
      # calculate strain of a specific edge
     dist = norm(enm.pts[nodej, :] .- enm.pts[nodei, :])
+    if l0 !== nothing
+        return (dist - l0) / l0
+    end
     l0 = norm(enm.pts0[nodej, :] .- enm.pts0[nodei, :])
    
     return (dist - l0) / l0
@@ -459,14 +462,15 @@ end
 
 #--------- mode analysis --------- 
 
-function cal_elastic_jacobian(enm::ENM)
+function cal_elastic_jacobian(enm::ENM,current::Bool=false)
     dim = enm.dim
     @assert dim == 2 || dim == 3
 
     T = eltype(enm.pts)
     J = zeros(T, dim*enm.n, dim*enm.n)
 
-    pts   = enm.pts
+    
+    pts   = current ? enm.pts : enm.pts0
     edges = enm.edges
     k     = enm.k
     l0    = enm.l0
@@ -505,8 +509,8 @@ function cal_elastic_jacobian(enm::ENM)
 end
 
 
-function cal_modes(enm::ENM)
-    J = cal_elastic_jacobian(enm)
+function cal_modes(enm::ENM,current::Bool=false)
+    J = cal_elastic_jacobian(enm,current)
     eigen(J)
 end
 
@@ -517,7 +521,7 @@ function plot_net(enm::ENM;
     output::Union{Nothing,AbstractVector{<:Integer}} = nothing,
     camera::Tuple{<:Real,<:Real} = (30, 30),
     color::Union{Nothing,Symbol,String,AbstractVector{<:Real}} = nothing
-)
+ )
     if color !== nothing
         if length(color) != length(enm.edges)
             error("Length of color vector must match number of edges.")
