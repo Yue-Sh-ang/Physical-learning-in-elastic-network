@@ -3,31 +3,31 @@ using Graphs
 import SimpleWeightedGraphs as SWG
 using Random
 using LinearAlgebra
-
+using Statistics
 
 function build_graph(enm::ENM)
-    g=SWG.SimpleWeightedGraph(enm.n)
-    for (i,(u,v)) in enumerate(enm.edges)
-        SWG.add_edge!(g,u,v,enm.l0[i])
+    g = SWG.SimpleWeightedGraph(enm.n)
+    for (i, (u, v)) in enumerate(enm.edges)
+        Graphs.add_edge!(g, u, v, enm.l0[i])  
     end
     return g
 end
 
 function spdist(g::SWG.SimpleWeightedGraph, u::Int, v::Int)
-    ds = dijkstra_shortest_paths(g, u).dists
-    return ds[v]  
+    ds = Graphs.dijkstra_shortest_paths(g, u).dists
+    return ds[v]
 end
 
 # Average endpoint-to-endpoint distance between two edges e0=(i,j) and e1=(k,l)
-function cal_edge_distance(g::SWG.SimpleWeightedGraph, edge1::Int, edge2::Int)
-    u,v = edges(g)[edge1]
-    k,l = edges(g)[edge2]
-    dists = [
+function cal_edge_distance(g::SWG.SimpleWeightedGraph, enm::ENM, edge1::Int, edge2::Int)
+    u, v = enm.edges[edge1]
+    k, l = enm.edges[edge2]
+
+    dists = (
         spdist(g, u, k),
         spdist(g, u, l),
         spdist(g, v, k),
-        spdist(g, v, l)
-    ]
+        spdist(g, v, l))
     return mean(dists)
 end
 
@@ -68,7 +68,7 @@ function choose_new_edge(enm::ENM,strain::Float64; inout::Union{Vector{Tuple{Int
         for edge in edge_candidates
             min_dist=typemax(Float64)
             for ip in inout
-                dist=cal_edge_distance(g, edge, ip[1])
+                dist=cal_edge_distance(g,enm, edge, ip[1])
                 if dist<min_dist
                     min_dist=dist
                 end
