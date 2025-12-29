@@ -31,7 +31,7 @@ function cal_edge_distance(g::SimpleWeightedGraph, edge1::Int, edge2::Int)
     return mean(dists)
 end
 
-function choose_new_edge(enm::ENM,strain::Float64; inout::Union{Vector{Tuple{Int,Float64,Float64}},nothing}=nothing,Distant=true)
+function choose_new_edge(enm::ENM,strain::Float64; inout::Union{Vector{Tuple{Int,Float64,Float64}}, Nothing}=nothing,Distant=true)
     excluded_nodes=Set{Int}()
     #exclude nodes involved in input/output edges
     if inout!==nothing
