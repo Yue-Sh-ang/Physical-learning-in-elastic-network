@@ -659,7 +659,7 @@ function plot_net_3d(
     output::Union{Nothing,AbstractVector{<:Integer}} = nothing,
     camera::Tuple{<:Real,<:Real} = (30, 30),
     color::Union{Nothing,Symbol,String,AbstractVector{<:Real}} = nothing
-	)
+    )
     pts   = enm.pts
     edges = enm.edges
     ne    = length(edges)
@@ -710,14 +710,15 @@ function plot_net_3d(
     end
 
     # --- Figure / LScene (3D) ---
-    fig = Figure(resolution = (950, 750))
-    ax3 = LScene(fig[1, 1], scenekw = (show_axis = true,))
+    fig = Figure(size = (950, 750))
+    ax3 = LScene(fig[1, 1]; scenekw = (show_axis = true,))
 
     # --- Normal edges ---
     normal_plot = nothing
+
     if color === nothing
         if !isempty(normal_seg)
-            linesegments!(ax3, normal_seg; color = :black, linewidth = 1.4)
+            linesegments!(ax3, normal_seg; color = :grey, linewidth = 1.5)
         end
     else
         vals = if (color == :k || color == "k")
@@ -730,17 +731,19 @@ function plot_net_3d(
             error("Unsupported `color`. Use nothing, :k (or \"k\"), or a length-ne vector of reals.")
         end
 
-        if !isempty(vals) && !isempty(normal_seg)
+        if isempty(vals) || isempty(normal_seg)
+            # nothing normal to color; skip colorbar
+        else
             cmin = minimum(vals)
             cmax = maximum(vals)
             colorrange = (cmin, cmax)
 
             normal_plot = linesegments!(
                 ax3, normal_seg;
-                color      = vals,          # one value per edge segment
+                color      = vals,
                 colormap   = :viridis,
                 colorrange = colorrange,
-                linewidth  = 1.6
+                linewidth  = 1.8
             )
 
             Colorbar(fig[1, 2], normal_plot; label = "edge color (normal edges)")
@@ -749,14 +752,14 @@ function plot_net_3d(
 
     # --- Special edges (dashed, fixed colors; excluded from colorbar) ---
     if !isempty(input_seg)
-        linesegments!(ax3, input_seg; color = :darkblue, linestyle = :dash, linewidth = 2.2)
+        linesegments!(ax3, input_seg; color = :darkblue, linestyle = :dash, linewidth = 2.4)
     end
     if !isempty(output_seg)
-        linesegments!(ax3, output_seg; color = :darkred, linestyle = :dash, linewidth = 2.2)
+        linesegments!(ax3, output_seg; color = :darkred, linestyle = :dash, linewidth = 2.4)
     end
 
     # --- Nodes ---
-    scatter!(ax3, pts[:, 1], pts[:, 2], pts[:, 3]; color = :black, markersize = 8)
+    Makie.scatter!(ax3, pts[:, 1], pts[:, 2], pts[:, 3]; color = :grey, markersize = 6)
 
     return fig
 end
