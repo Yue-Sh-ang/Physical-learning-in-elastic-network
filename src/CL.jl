@@ -138,53 +138,7 @@ function load_trainer_CL(tr::Trainer_CL)
     return net,input,output
 end
 
-function save_task(tr::Trainer_CL, dir::String)
-    enm,_,_ = load_trainer_CL(tr)
-    save_graph(joinpath(dir, "network.txt"), enm)
-    open(joinpath(dir, "input.txt"), "w") do io
-        println(io, length(tr.input))
-        for ip in tr.input
-            println(io, "$(ip[1]) $(ip[2]) $(ip[3])")
-        end
-    end
-    open(joinpath(dir, "output.txt"), "w") do io
-        println(io, length(tr.output))
-        for op in tr.output
-            println(io, "$(op[1]) $(op[2]) $(op[3])")
-        end
-    end
-end
 
-function load_task(dir::String)
-    input = Vector{Tuple{Int,Float64,Float64}}()
-    output= Vector{Tuple{Int,Float64,Float64}}()
-
-    open(joinpath(dir, "input.txt"), "r") do io
-        n = parse(Int, readline(io))
-        for _ in 1:n
-            line = readline(io)
-            parts = split(line)
-            edge = parse(Int, parts[1])
-            st   = parse(Float64, parts[2])
-            l0   = parse(Float64, parts[3])
-            push!(input, (edge,st,l0))
-        end
-    end
-
-    open(joinpath(dir, "output.txt"), "r") do io
-        n = parse(Int, readline(io))
-        for _ in 1:n
-            line = readline(io)
-            parts = split(line)
-            edge = parse(Int, parts[1])
-            st   = parse(Float64, parts[2])
-            l0   = parse(Float64, parts[3])
-            push!(output, (edge,st,l0))
-        end
-    end
-    return input, output
-
-end
 
 # # one exampe of training: eta always 1
 # function step!(tr::Trainer_CL,T;sf_old= nothing, eta=1.0, alpha=1.0, step_md=10)
