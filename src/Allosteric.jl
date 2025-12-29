@@ -1,25 +1,25 @@
 # to find allosteric sites in ENM
 using Graphs
-using SimpleWeightedGraphs
+import SimpleWeightedGraphs as SWG
 using Random
 using LinearAlgebra
 
 
 function build_graph(enm::ENM)
-    g=SimpleWeightedGraph(enm.n)
+    g=SWG.SimpleWeightedGraph(enm.n)
     for (i,(u,v)) in enumerate(enm.edges)
-        add_edge!(g,u,v,enm.l0[i])
+        SWG.add_edge!(g,u,v,enm.l0[i])
     end
     return g
 end
 
-function spdist(g::SimpleWeightedGraph, u::Int, v::Int)
+function spdist(g::SWG.SimpleWeightedGraph, u::Int, v::Int)
     ds = dijkstra_shortest_paths(g, u).dists
     return ds[v]  
 end
 
 # Average endpoint-to-endpoint distance between two edges e0=(i,j) and e1=(k,l)
-function cal_edge_distance(g::SimpleWeightedGraph, edge1::Int, edge2::Int)
+function cal_edge_distance(g::SWG.SimpleWeightedGraph, edge1::Int, edge2::Int)
     u,v = edges(g)[edge1]
     k,l = edges(g)[edge2]
     dists = [
