@@ -3,7 +3,7 @@ module PhyLearn_EN
 include("ENM.jl")
 include("CL.jl")
 include("Allosteric.jl")
-include("MSM.jl")
+#include("MSM.jl")
 export  ENM,save_enm,
         reset_config!,add_edge!,cal_degree,
         run_md!,quench_fire!,
