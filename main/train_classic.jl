@@ -16,7 +16,7 @@ print_per=200
 
 println("Dimension: $(dim), Network ID: $(network_id), taskid: $(taskid), Training Temperature: $(trainT)")
 
-root="/data2/shared/yueshang/julia/2d/"
+root="/data2/shared/yueshang/julia/"
 net_file = joinpath(root, "/dim$(dim)/network$(network_id)/network.txt")
 task_path = joinpath(root, "/dim$(dim)/network$(network_id)/task$(taskid)/")
 net=ENM(net_file)
