@@ -20,7 +20,7 @@ root="/data2/shared/yueshang/julia/"
 net_file =  "/data2/shared/yueshang/julia/dim$(dim)/network$(network_id)/network.txt"
 task_path = "/data2/shared/yueshang/julia/dim$(dim)/network$(network_id)/task$(taskid)/"
 net=ENM(net_file)
-if !isdirectory(task_path)
+if !isdir(task_path)
     mkdir(task_path)
     generate_task(net,task_path; s_in=[0.2],s_out=[0.2],Distant=true,seed=taskid)
 end
