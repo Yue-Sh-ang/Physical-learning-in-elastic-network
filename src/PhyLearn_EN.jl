@@ -3,7 +3,7 @@ module PhyLearn_EN
 include("ENM.jl")
 include("CL.jl")
 include("Allosteric.jl")
-#include("MSM.jl")
+include("MSM.jl")
 export  ENM,save_enm,
         reset_config!,add_edge!,cal_degree,
         run_md!,quench_fire!,
@@ -19,7 +19,8 @@ export  ENM,save_enm,
         build_graph,choose_new_edge,cal_edge_distance,
         #Allosteric.jl
         generate_task,load_task
-        #MSM:not now
+        #MSM:
+        rigid_align!,project_modes_rigid,simulate_and_record
 
 
 end # module PhyLearn_EN
