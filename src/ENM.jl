@@ -781,3 +781,62 @@ function plot_net_3d(
     return fig
 end
 
+
+function plot_displacement(pts::Matrix{Float64},vec::AbstractVector{<:Real}; scale::Float64=1.0)
+    dim = size(pts, 2)
+    @assert dim == 2 || dim == 3
+
+    n = size(pts, 1)
+    @assert length(vec) == dim*n "Length of vec must be dim * n"
+
+    
+    edges = enm.edges
+    ne    = length(edges)
+
+    displaced_pts = similar(pts)
+    @inbounds for i in 1:n
+        for d in 1:dim
+            displaced_pts[i,d] = pts[i,d] + scale * vec[(i-1)*dim + d]
+        end
+    end
+
+    if dim == 2
+        fig = Figure(size = (500, 500))
+        ax  = Axis(fig[1, 1]; aspect = DataAspect(), xlabel = "x", ylabel = "y")
+
+        # original network
+        for i in 1:ne
+            u, v = edges[i]
+            lines!(ax, [pts[u,1], pts[v,1]], [pts[u,2], pts[v,2]]; color = :grey, linewidth = 1,linestyle = :dash)
+        end
+
+        # displaced network
+        for i in 1:ne
+            u, v = edges[i]
+            lines!(ax, [displaced_pts[u,1], displaced_pts[v,1]], [displaced_pts[u,2], displaced_pts[v,2]]; color = :red, linewidth = 1.5)
+        end
+
+        Makie.scatter!(ax, pts[:, 1], pts[:, 2]; color = :grey, markersize = 6)
+        Makie.scatter!(ax, displaced_pts[:, 1], displaced_pts[:, 2]; color = :red, markersize = 6)
+
+        return fig
+
+    else # dim == 3
+        fig = Figure(size = (950, 750))
+        ax3 = LScene(fig[1, 1]; scenekw = (show_axis = true,))
+
+        # original network
+        for i in 1:ne
+            u, v = edges[i]
+            lines!(ax3, [pts[u,1], pts[v,1]], [pts[u,2], pts[v,2]], [pts[u,3], pts[v,3]]; color = :grey, linewidth = 1, linestyle = :dash)
+        end
+        # displaced network
+        for i in 1:ne
+            u, v = edges[i]
+            lines!(ax3, [displaced_pts[u,1], displaced_pts[v,1]], [displaced_pts[u,2], displaced_pts[v,2]], [displaced_pts[u,3], displaced_pts[v,3]]; color = :red, linewidth = 1.5)
+        end     
+        Makie.scatter!(ax3, pts[:, 1], pts[:, 2], pts[:, 3]; color = :grey, markersize = 6)
+        Makie.scatter!(ax3, displaced_pts[:, 1], displaced_pts[:, 2], displaced_pts[:, 3]; color = :red, markersize = 6)
+        return fig
+    end
+end
