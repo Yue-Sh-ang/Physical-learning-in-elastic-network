@@ -1,13 +1,13 @@
 # To record locations of the markov state model
 using PhyLearn_EN
 using StableRNGs
-
+#train info
 dim=parse(Int, ARGS[1])
 network_id=parse(Int, ARGS[2])
 taskid=parse(Int, ARGS[3])
 trainT=parse(Float64, ARGS[4])
 seed=parse(Int, ARGS[5])
-
+#test info
 testT=parse(Float64, ARGS[6])
 strain_source=parse(Float64, ARGS[7])
 seed2=parse(Int, ARGS[8])
@@ -17,7 +17,7 @@ traintime=10_000
 alpha=50.0
 timewindow=200
 
-record_per = 5000 #50tau
+record_per = 20000 #100tau
 n_frames= 2000
 
 
@@ -33,7 +33,10 @@ n_soft=10
 phi,lambda = mode_basis(enm, k=n_soft)
 
 #put strain
-put_strain!(enm, input[1][1], strain_source)
+if strain_source != 0.0
+     put_strain!(enm, input[1][1], strain_source)
+end
+
 
 test_path=joinpath(task_path, "MSM_testT$(testT)_strain$(strain_source)_seed$(seed)/")
 mkpath(test_path)
@@ -48,7 +51,7 @@ for stepid in 1:n_frames
 
 end
 
-open(joinpath(test_path, "project10modes.f32"), "w") do file
+open(joinpath(test_path, "data10modes.f32"), "w") do file
     write(file, Float32.(data))
 end
 
@@ -56,6 +59,3 @@ open(joinpath(test_path, "strain.f32"), "w") do file
     write(file, Float32.(sout))
 end
 
-TICA_=tica(data;lag=10,k=3)
-
-open(join)
