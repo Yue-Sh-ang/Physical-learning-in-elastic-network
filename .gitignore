@@ -3,7 +3,7 @@
 
 # Ignore notebooks
 *.ipynb
-main/
+
 script/
 *.bin
 *.sh
