@@ -10,8 +10,8 @@ alpha=2.0
 timewindow=200
 trainsteps=500_001
 
-save_per=50_000
-print_per=10_000
+save_per=250_000
+print_per=50_000
 
 
 println("Dimension: $(dim), Network ID: $(network_id), taskid: $(taskid), Training Temperature: $(trainT)")
@@ -22,7 +22,7 @@ task_path = "/data2/shared/yueshang/julia/dim$(dim)/network$(network_id)/task$(t
 net=ENM(net_file)
 if !isdir(task_path)
     mkdir(task_path)
-    generate_task(net,task_path; s_in=[0.2],s_out=[0.2],Distant=true,seed=taskid)
+    generate_task(net,task_path; s_in=[0.4],s_out=[0.4],Distant=true,seed=taskid)
 end
 input,output=load_task(task_path)
 train0=Trainer_CL(net,input,output)

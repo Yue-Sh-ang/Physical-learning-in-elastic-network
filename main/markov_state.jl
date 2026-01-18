@@ -12,9 +12,8 @@ seed=parse(Int, ARGS[5])
 testT=parse(Float64, ARGS[6])
 strain_source=parse(Float64, ARGS[7])
 seed2=parse(Int, ARGS[8])
+traintime=parse(Int, ARGS[9])
 
-
-traintime=500_000
 alpha=2.0
 timewindow=200
 
@@ -41,27 +40,27 @@ end
 
 test_path=joinpath(trainpath, "MSM_testT$(testT)_time$(traintime)_strain$(strain_source)_seed$(seed)/")
 mkpath(test_path)
-data    = Matrix{Float32}(undef, n_frames, n_soft)
+#data    = Matrix{Float32}(undef, n_frames, n_soft)
 sout= Vector{Float32}(undef, n_frames)
-Potential = Vector{Float32}(undef, n_frames)
+#Potential = Vector{Float32}(undef, n_frames)
 for stepid in 1:n_frames
     
     rng=StableRNG(seed2+stepid)
     run_md!(enm,testT,steps=record_per, rng=rng)
-    data[stepid, :] .= PhyLearn_EN.project_modes_rigid(enm, phi)
+#    data[stepid, :] .= PhyLearn_EN.project_modes_rigid(enm, phi)
     sout[stepid] = PhyLearn_EN.cal_strain(enm, output[1][1])
-    Potential[stepid] = Float32(PhyLearn_EN.cal_elastic_energy(enm))
+#    Potential[stepid] = Float32(PhyLearn_EN.cal_elastic_energy(enm))
 end
 
-open(joinpath(test_path, "data10modes.f32"), "w") do file
-    write(file, Float32.(data))
-end
+#open(joinpath(test_path, "data10modes.f32"), "w") do file
+#    write(file, Float32.(data))
+#end
 
 open(joinpath(test_path, "strain.f32"), "w") do file
     write(file, Float32.(sout))
 end
 
-open(joinpath(test_path, "potential.f32"), "w") do file
-    write(file, Float32.(Potential))
-end
+#open(joinpath(test_path, "potential.f32"), "w") do file
+#    write(file, Float32.(Potential))
+#end
 
