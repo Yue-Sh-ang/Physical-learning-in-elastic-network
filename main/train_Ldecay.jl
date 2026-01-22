@@ -65,7 +65,7 @@ for stepid in 1:trainsteps
         E_f=cal_elastic_energy(train0.net_f)
         E_c=cal_elastic_energy(train0.net_c)
         
-        println("Step: $(stepid), E_f: $(E_f), E_c: $(E_c), strain: $(strain_f_out)")
+        println("Step: $(stepid), E_f: $(E_f), E_c: $(E_c), strain: $(error)")
     end
 
     if stepid%save_per==0
