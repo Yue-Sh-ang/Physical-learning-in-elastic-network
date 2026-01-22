@@ -68,7 +68,7 @@ function project_modes_rigid(enm::ENM, Φ::Matrix{Float64})
     x  = vec_pts(X)
     x0 = vec_pts(enm.pts0)
 
-    return Φ' * (x .- x0) , dot(x - x0, x - x0)
+    return Φ' * (x .- x0) , LinearAlgebra.dot(x - x0, x - x0)
 end
 
 
