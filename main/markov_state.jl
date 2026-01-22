@@ -17,13 +17,25 @@ traintime=parse(Int, ARGS[9])
 alpha=2.0
 timewindow=200
 
-record_per = 20000 #100tau
+record_per = 100000 #500tau
 n_frames= 2000
 
 
 root="/data2/shared/yueshang/julia/"
 net_file =  "/data2/shared/yueshang/julia/dim$(dim)/network$(network_id)/network.txt"
 task_path = "/data2/shared/yueshang/julia/dim$(dim)/network$(network_id)/task$(taskid)/"
+
+function cal_dr2(enm::ENM)
+    X = copy(enm.pts)
+    rigid_align!(X, enm.pts0)
+    
+    # Calculate displacement directly without creating intermediate vectors
+    dx = 0.0
+    @inbounds for i in eachindex(X)
+        dx += abs2(X[i] - enm.pts0[i])
+    end
+    return dx
+end
 
 enm=ENM(net_file)
 input,output=load_task(task_path)
@@ -38,29 +50,35 @@ if strain_source != 0.0
 end
 
 
-test_path=joinpath(trainpath, "MSM_testT$(testT)_time$(traintime)_strain$(strain_source)_seed$(seed)/")
+test_path=joinpath(trainpath, "MSM_testT$(testT)_time$(traintime)_strain$(strain_source)_seed$(seed2)/")
 mkpath(test_path)
-#data    = Matrix{Float32}(undef, n_frames, n_soft)
+data    = Matrix{Float32}(undef, n_frames, n_soft)
 sout= Vector{Float32}(undef, n_frames)
 #Potential = Vector{Float32}(undef, n_frames)
+dr2 = Vector{Float32}(undef, n_frames)
 for stepid in 1:n_frames
     
     rng=StableRNG(seed2+stepid)
     run_md!(enm,testT,steps=record_per, rng=rng)
-#    data[stepid, :] .= PhyLearn_EN.project_modes_rigid(enm, phi)
+    data[stepid, :] .= PhyLearn_EN.project_modes_rigid(enm, phi)
     sout[stepid] = PhyLearn_EN.cal_strain(enm, output[1][1])
-#    Potential[stepid] = Float32(PhyLearn_EN.cal_elastic_energy(enm))
+    dr2[stepid] = cal_dr2(enm)
+    #Potential[stepid] = Float32(PhyLearn_EN.cal_elastic_energy(enm))
 end
 
-#open(joinpath(test_path, "data10modes.f32"), "w") do file
-#    write(file, Float32.(data))
-#end
+open(joinpath(test_path, "data10modes.f32"), "w") do file
+   write(file, Float32.(data))
+end
 
 open(joinpath(test_path, "strain.f32"), "w") do file
     write(file, Float32.(sout))
 end
 
-#open(joinpath(test_path, "potential.f32"), "w") do file
+open(joinpath(test_path, "dr2.f32"), "w") do file
+   write(file, Float32.(dr2))
+end
+
+# open(joinpath(test_path, "potential.f32"), "w") do file
 #    write(file, Float32.(Potential))
-#end
+# end
 
