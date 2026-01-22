@@ -25,18 +25,6 @@ root="/data2/shared/yueshang/julia/"
 net_file =  "/data2/shared/yueshang/julia/dim$(dim)/network$(network_id)/network.txt"
 task_path = "/data2/shared/yueshang/julia/dim$(dim)/network$(network_id)/task$(taskid)/"
 
-function cal_dr2(enm::ENM)
-    X = copy(enm.pts)
-    rigid_align!(X, enm.pts0)
-    
-    # Calculate displacement directly without creating intermediate vectors
-    dx = 0.0
-    @inbounds for i in eachindex(X)
-        dx += abs2(X[i] - enm.pts0[i])
-    end
-    return dx
-end
-
 enm=ENM(net_file)
 input,output=load_task(task_path)
 trainpath=joinpath(task_path, "trainT$(trainT)_alpha$(alpha)_tw$(timewindow)","seed$(seed)")
@@ -60,9 +48,8 @@ for stepid in 1:n_frames
     
     rng=StableRNG(seed2+stepid)
     run_md!(enm,testT,steps=record_per, rng=rng)
-    data[stepid, :] .= PhyLearn_EN.project_modes_rigid(enm, phi)
+    data[stepid, :], dr2[stepid] = PhyLearn_EN.project_modes_rigid(enm, phi)
     sout[stepid] = PhyLearn_EN.cal_strain(enm, output[1][1])
-    dr2[stepid] = cal_dr2(enm)
     #Potential[stepid] = Float32(PhyLearn_EN.cal_elastic_energy(enm))
 end
 
