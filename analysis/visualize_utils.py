@@ -137,12 +137,13 @@ class ENM:
         J = np.zeros((dim * self.n, dim * self.n), dtype=np.float64)
         
         pts = self.pts if current else self.pts0
+        k=self.k
         if bounded:
             for e,_,_ in self.input:
-                self.k[e]=100.0
+                k[e]=100.0
         else:
             for e,_,_ in self.input:
-                self.k[e]=0.0
+                k[e]=0.0
     
         for i in range(self.ne):
             u, v = self.edges[i]
@@ -156,7 +157,7 @@ class ENM:
             
             dist = np.sqrt(dist2)
             
-            ki = self.k[i]
+            ki = k[i]
             l0i = self.l0[i]
             
             term1 = ki * (1 - l0i / dist)
