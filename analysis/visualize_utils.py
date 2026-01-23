@@ -58,7 +58,8 @@ class ENM:
         self.ne = len(edges)
 
     def load_pts(self, f64: str):
-        pts_new = np.fromstring(f64, sep=" ", dtype=np.float64).reshape(self.n, self.dim)
+        pts_new = np.fromfile(f64, dtype=np.float64)
+        pts_new = pts_new.reshape((self.n, self.dim),order='F')
         self.pts = pts_new
     
     def reset(self):
@@ -66,7 +67,7 @@ class ENM:
         self.vel = np.zeros_like(self.pts)
 
     def load_k(self, f64: str):
-        k_new = np.fromstring(f64, sep=" ", dtype=np.float64)
+        k_new = np.fromfile(f64, dtype=np.float64)
         self.k = k_new
     
     def load_task(self, dir: str):
@@ -82,7 +83,7 @@ class ENM:
                 edge = int(parts[0])
                 st = float(parts[1])
                 l0 = float(parts[2])
-                input_data.append((edge, st, l0))
+                input_data.append((edge-1, st, l0))#change to python index
         
         # Read output.txt
         with open(os.path.join(dir, "output.txt"), "r") as f:
@@ -92,7 +93,7 @@ class ENM:
                 edge = int(parts[0])
                 st = float(parts[1])
                 l0 = float(parts[2])
-                output_data.append((edge, st, l0))
+                output_data.append((edge-1, st, l0))#change to python index
         
         self.input = input_data
         self.output = output_data
