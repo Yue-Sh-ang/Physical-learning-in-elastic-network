@@ -6,12 +6,12 @@ taskid=parse(Int, ARGS[3])
 trainT=parse(Float64, ARGS[4])
 seed=parse(Int, ARGS[5])
 
-alpha=2.0
+alpha=0.5
 timewindow=200
-trainsteps=500_001
+trainsteps=1_000_001
 
-save_per=250_000
-print_per=50_000
+save_per=500_000
+print_per=100_000
 
 
 println("Dimension: $(dim), Network ID: $(network_id), taskid: $(taskid), Training Temperature: $(trainT)")

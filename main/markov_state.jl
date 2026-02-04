@@ -15,7 +15,6 @@ seed2=parse(Int, ARGS[8])
 traintime=parse(Int, ARGS[9])
 alpha=parse(Float64, ARGS[10])
 
-
 timewindow=200
 
 record_per = 100000 #500tau
