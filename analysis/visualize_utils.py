@@ -2,7 +2,10 @@ import numpy as np
 from dataclasses import dataclass
 from typing import List, Tuple
 import os
+import matplotlib.pyplot as plt
 
+
+# from scipy.linalg import orthogonal_procrustes as procrustes
 
 
 class ENM:
@@ -176,5 +179,55 @@ class ENM:
         
         return J
     
-    
+    # def rigid_correction(self):
+    #     b = self.pts0 - np.mean(self.pts0, axis=0)
+    #     a = self.pts - np.mean(self.pts, axis=0)
+    #     R, sca = procrustes(a, b, check_finite=False)
+    #     pts= a @ R
+    #     return pts
 
+    # def mode_projection(self, modes: np.ndarray):
+    #     """Project current displacement onto given modes.
+    #     Args:
+    #         modes: Array of shape (n_modes, dim * n)
+        
+    #     Returns:
+    #         coeffs: Array of shape (n_modes,)
+    #     """
+    #     self.rigid_correction()
+    #     disp = self.pts.ravel() - self.pts0.ravel()
+    #     coeffs = modes @ disp
+    #     return coeffs
+
+    def plot_2d(self,ax=None,vmin=None,vmax=None,current: bool = True):
+        if self.dim != 2:
+            raise ValueError("Dimension must be 2 for 2D plotting.")
+        if current:
+            pts = self.pts
+        else:
+            pts = self.pts0
+
+        if ax is None:
+            fig, ax = plt.subplots()
+        #plot the nodes color if there is special nodes(input nodes or output nodes)
+        ax.scatter(pts[:, 0], pts[:, 1], c='black', s=20)
+        if self.input is not None:
+            for edge, _, _ in self.input:
+                u, v = self.edges[edge]
+                ax.scatter(pts[u, 0], pts[u, 1], c='blue', s=30)
+                ax.scatter(pts[v, 0], pts[v, 1], c='blue', s=30)
+        if self.output is not None:
+            for edge, _, _ in self.output:
+                u, v = self.edges[edge]
+                ax.scatter(pts[u, 0], pts[u, 1], c='red', s=30)
+                ax.scatter(pts[v, 0], pts[v, 1], c='red', s=30)
+        
+        for i, (u, v) in enumerate(self.edges):
+            x = [pts[u, 0], pts[v, 0]]
+            y = [pts[u, 1], pts[v, 1]]
+            if vmin is not None and vmax is not None:
+                color = plt.cm.viridis((self.k[i] - vmin) / (vmax - vmin))
+            else:
+                color = 'gray'
+            ax.plot(x, y, c=color, linewidth=1)
+        ax.set_aspect('equal')

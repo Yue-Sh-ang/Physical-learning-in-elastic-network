@@ -13,8 +13,9 @@ testT=parse(Float64, ARGS[6])
 strain_source=parse(Float64, ARGS[7])
 seed2=parse(Int, ARGS[8])
 traintime=parse(Int, ARGS[9])
+alpha=parse(Float64, ARGS[10])
 
-alpha=2.0
+
 timewindow=200
 
 record_per = 100000 #500tau
