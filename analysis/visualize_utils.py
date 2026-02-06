@@ -226,7 +226,7 @@ class ENM:
             x = [pts[u, 0], pts[v, 0]]
             y = [pts[u, 1], pts[v, 1]]
             if vmin is not None and vmax is not None:
-                color = plt.cm.viridis((self.k[i] - vmin) / (vmax - vmin))
+                color = plt.cm.bwr((self.k[i] - vmin) / (vmax - vmin))
             else:
                 color = 'gray'
             ax.plot(x, y, c=color, linewidth=1)
