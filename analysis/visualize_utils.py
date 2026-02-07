@@ -140,7 +140,7 @@ class ENM:
         J = np.zeros((dim * self.n, dim * self.n), dtype=np.float64)
         
         pts = self.pts if current else self.pts0
-        k=self.k
+        k=self.k.copy()
         if bounded:
             for e,_,_ in self.input:
                 k[e]=100.0
@@ -210,24 +210,29 @@ class ENM:
         if ax is None:
             fig, ax = plt.subplots()
         #plot the nodes color if there is special nodes(input nodes or output nodes)
-        ax.scatter(pts[:, 0], pts[:, 1], c='black', s=20)
+        skip_edge=[]
+        ax.scatter(pts[:, 0], pts[:, 1], c='black', s=20,zorder=1)
         if self.input is not None:
             for edge, _, _ in self.input:
+                skip_edge.append(edge)
                 u, v = self.edges[edge]
-                ax.scatter(pts[u, 0], pts[u, 1], c='blue', s=30)
-                ax.scatter(pts[v, 0], pts[v, 1], c='blue', s=30)
+                ax.scatter(pts[u, 0], pts[u, 1], c='blue', s=30,zorder=2)
+                ax.scatter(pts[v, 0], pts[v, 1], c='blue', s=30,zorder=2)
         if self.output is not None:
             for edge, _, _ in self.output:
+                skip_edge.append(edge)
                 u, v = self.edges[edge]
-                ax.scatter(pts[u, 0], pts[u, 1], c='red', s=30)
-                ax.scatter(pts[v, 0], pts[v, 1], c='red', s=30)
+                ax.scatter(pts[u, 0], pts[u, 1], c='red', s=30,zorder=2)
+                ax.scatter(pts[v, 0], pts[v, 1], c='red', s=30,zorder=2)
         
         for i, (u, v) in enumerate(self.edges):
+            if i in skip_edge:
+                continue
             x = [pts[u, 0], pts[v, 0]]
             y = [pts[u, 1], pts[v, 1]]
             if vmin is not None and vmax is not None:
                 color = plt.cm.bwr((self.k[i] - vmin) / (vmax - vmin))
             else:
                 color = 'gray'
-            ax.plot(x, y, c=color, linewidth=1)
+            ax.plot(x, y, c=color, linewidth=1,zorder=5)
         ax.set_aspect('equal')
