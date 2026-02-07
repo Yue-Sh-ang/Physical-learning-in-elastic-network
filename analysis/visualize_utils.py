@@ -3,9 +3,7 @@ from dataclasses import dataclass
 from typing import List, Tuple
 import os
 import matplotlib.pyplot as plt
-
-
-# from scipy.linalg import orthogonal_procrustes as procrustes
+from scipy.linalg import orthogonal_procrustes as procrustes
 
 
 class ENM:
@@ -179,12 +177,12 @@ class ENM:
         
         return J
     
-    # def rigid_correction(self):
-    #     b = self.pts0 - np.mean(self.pts0, axis=0)
-    #     a = self.pts - np.mean(self.pts, axis=0)
-    #     R, sca = procrustes(a, b, check_finite=False)
-    #     pts= a @ R
-    #     return pts
+    def rigid_correction(self,pts):
+        b = self.pts0 - np.mean(self.pts0, axis=0)
+        a = pts - np.mean(pts, axis=0)
+        R, sca = procrustes(a, b, check_finite=False)
+        pts_new= a @ R
+        return pts_new
 
     # def mode_projection(self, modes: np.ndarray):
     #     """Project current displacement onto given modes.
@@ -236,3 +234,50 @@ class ENM:
                 color = 'gray'
             ax.plot(x, y, c=color, linewidth=1,zorder=5)
         ax.set_aspect('equal')
+
+    def plot_disp(self,disp,ax=None,scale=1.0, rigid: bool = False):
+        dim=self.dim
+        pts0 = self.pts0
+        pts=pts0+scale*disp.reshape((self.n,self.dim))
+        if rigid:
+            pts = self.rigid_correction(pts)
+        if ax is None:
+            fig, ax = plt.subplots()
+        
+        ax.scatter(pts[:, 0], pts[:, 1], c='black', s=20,zorder=1)
+        ax.scatter(pts0[:, 0], pts0[:, 1], c='grey', s=20,zorder=1)
+
+        skip_edge=[]
+        if self.input is not None:
+            for edge, _, _ in self.input:
+                skip_edge.append(edge)
+                u, v = self.edges[edge]
+                ax.scatter(pts[u, 0], pts[u, 1], c='blue', s=30,zorder=2)
+                ax.scatter(pts[v, 0], pts[v, 1], c='blue', s=30,zorder=2)
+                ax.scatter(pts0[u, 0], pts0[u, 1], c='blue', s=30,zorder=2)
+                ax.scatter(pts0[v, 0], pts0[v, 1], c='blue', s=30,zorder=2)
+        if self.output is not None:
+            for edge, _, _ in self.output:
+                skip_edge.append(edge)
+                u, v = self.edges[edge]
+                ax.scatter(pts[u, 0], pts[u, 1], c='red', s=30,zorder=2)
+                ax.scatter(pts[v, 0], pts[v, 1], c='red', s=30,zorder=2)
+                ax.scatter(pts0[u, 0], pts0[u, 1], c='red', s=30,zorder=2)
+                ax.scatter(pts0[v, 0], pts0[v, 1], c='red', s=30,zorder=2)
+        
+        for i, (u, v) in enumerate(self.edges):
+            if i in skip_edge:
+                continue
+            x = [pts[u, 0], pts[v, 0]]
+            y = [pts[u, 1], pts[v, 1]]
+            ax.plot(x, y, c='black', linewidth=1,zorder=5)  
+
+            x0 = [pts0[u, 0], pts0[v, 0]]
+            y0 = [pts0[u, 1], pts0[v, 1]]
+            ax.plot(x0, y0, c='gray', linestyle='-', linewidth=1,zorder=4)
+        ax.set_aspect('equal')
+    
+
+
+
+
