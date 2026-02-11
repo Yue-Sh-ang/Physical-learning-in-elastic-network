@@ -64,7 +64,7 @@ for stepid in 1:trainsteps
         println("Step: $(stepid), E_f: $(E_f), E_c: $(E_c), strain: $(strain_f_out)")
     end
 
-    if stepid%save_per==0
+    if stepid==trainsteps-1
         save_k(train0.net_f, joinpath(trainpath, "k$(stepid).f64"))
         save_pts(train0.net_f, joinpath(trainpath, "pts$(stepid).f64"))
         
