@@ -2,6 +2,10 @@ using PhyLearn_EN
 using StableRNGs
 
 # Parse command line arguments
+if length(ARGS) < 11
+    error("Not enough command line arguments provided.")
+end
+
 dim = parse(Int, ARGS[1])
 network_id = parse(Int, ARGS[2])
 taskid = parse(Int, ARGS[3])
