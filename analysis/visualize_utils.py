@@ -240,7 +240,10 @@ class ENM:
                 continue
             x = [pts[u, 0], pts[v, 0]]
             y = [pts[u, 1], pts[v, 1]]
-            ax.plot(x, y, c=color, linewidth=1,zorder=5)
+            if isinstance(color,str):
+                ax.plot(x, y, c=color, linewidth=1,zorder=5)
+            else:
+                ax.plot(x, y, c=color[i], linewidth=1,zorder=5)
         ax.set_aspect('equal')
 
     def plot_disp(self,disp,ax=None,scale=1.0, rigid: bool = False):
