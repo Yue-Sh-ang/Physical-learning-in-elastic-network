@@ -197,13 +197,25 @@ class ENM:
     #     coeffs = modes @ disp
     #     return coeffs
 
-    def plot_2d(self,ax=None,vmin=None,vmax=None,current: bool = True):
+    def plot_2d(self,ax=None,color=None,vmin=None,vmax=None,current: bool = True):
         if self.dim != 2:
             raise ValueError("Dimension must be 2 for 2D plotting.")
         if current:
             pts = self.pts
         else:
             pts = self.pts0
+
+        if color is None:
+            color='gray'
+        else:
+            assert color.shape==(self.ne)
+            color=np.array(color)
+            if vmin is None:
+                vmin=color.min()
+            if vmax is None:
+                vmax=color.max()
+            color=plt.cm.bwr((color-vmin)/(vmax-vmin))
+                
 
         if ax is None:
             fig, ax = plt.subplots()
@@ -228,10 +240,6 @@ class ENM:
                 continue
             x = [pts[u, 0], pts[v, 0]]
             y = [pts[u, 1], pts[v, 1]]
-            if vmin is not None and vmax is not None:
-                color = plt.cm.bwr((self.k[i] - vmin) / (vmax - vmin))
-            else:
-                color = 'gray'
             ax.plot(x, y, c=color, linewidth=1,zorder=5)
         ax.set_aspect('equal')
 
