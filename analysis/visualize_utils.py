@@ -208,7 +208,7 @@ class ENM:
         if color is None:
             color='gray'
         else:
-            assert color.shape==(self.ne)
+            assert color.size==(self.ne)
             color=np.array(color)
             if vmin is None:
                 vmin=color.min()
